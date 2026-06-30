@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+public/data/
+RELEASE.md
+memo.txt
+.vscode
