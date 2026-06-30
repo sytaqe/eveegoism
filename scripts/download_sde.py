@@ -24,8 +24,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+SDE_VERSION_URL = "https://developers.eveonline.com/static-data/tranquility/latest.jsonl"
 SDE_URL = "https://developers.eveonline.com/static-data/eve-online-static-data-latest-jsonl.zip"
 OUTPUT_DIR = Path(__file__).parent.parent / "public" / "data"
+VERSION_FILE = OUTPUT_DIR / "sde_version.json"
+OUTPUT_FILES = ["ship_meta.json", "ship_groups.json", "cloaky_types.json"]
 
 # Group names that confer cloaky status (case-insensitive substring match)
 CLOAKY_GROUP_NAMES = {
@@ -43,6 +46,25 @@ CLOAKY_SHIP_NAMES = {
     "tholos",
     "astero",
 }
+
+
+def fetch_latest_build():
+    with urllib.request.urlopen(SDE_VERSION_URL, timeout=10) as resp:
+        for line in resp.read().decode().splitlines():
+            entry = json.loads(line)
+            if entry.get("_key") == "sde":
+                return str(entry["buildNumber"])
+    raise RuntimeError("Could not find sde build number in latest.jsonl")
+
+
+def load_cached_build():
+    if VERSION_FILE.exists():
+        return json.loads(VERSION_FILE.read_text(encoding="utf-8")).get("buildNumber")
+    return None
+
+
+def save_cached_build(build):
+    VERSION_FILE.write_text(json.dumps({"buildNumber": build}), encoding="utf-8")
 
 
 def find_entry(zf, target):
@@ -70,6 +92,22 @@ def read_jsonl(zf, target):
 
 
 def main():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    print("Checking latest SDE build number...")
+    latest = fetch_latest_build()
+    cached = load_cached_build()
+    files_present = all((OUTPUT_DIR / f).exists() for f in OUTPUT_FILES)
+
+    if cached == latest and files_present:
+        print(f"SDE is up to date (build {latest}). Nothing to do.")
+        return
+
+    if cached:
+        print(f"New SDE build available: {cached} → {latest}")
+    else:
+        print(f"No cached SDE found. Downloading build {latest}.")
+
     print(f"Downloading SDE from {SDE_URL} ...")
     with tempfile.TemporaryFile() as tmp:
         with urllib.request.urlopen(SDE_URL) as resp:
@@ -136,8 +174,6 @@ def main():
                 if name.lower() in CLOAKY_SHIP_NAMES:
                     cloaky_types.append(type_id)
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     out = OUTPUT_DIR / "ship_meta.json"
     out.write_text(json.dumps(meta, separators=(",", ":")), encoding="utf-8")
     print(f"Written {len(meta)} non-T1 entries to {out}")
@@ -149,6 +185,9 @@ def main():
     out = OUTPUT_DIR / "cloaky_types.json"
     out.write_text(json.dumps(sorted(set(cloaky_types)), separators=(",", ":")), encoding="utf-8")
     print(f"Written {len(set(cloaky_types))} cloaky type IDs to {out}")
+
+    save_cached_build(latest)
+    print(f"SDE build {latest} cached.")
 
 
 if __name__ == "__main__":

@@ -25,6 +25,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache SDE data
+        uses: actions/cache@v4
+        with:
+          path: public/data/
+          key: sde-${{ hashFiles('public/data/sde_version.json') }}
+          restore-keys: sde-
+
       - name: Download SDE
         run: python scripts/download_sde.py
 

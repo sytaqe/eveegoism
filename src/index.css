@@ -94,11 +94,12 @@ body {
 
 .toggle-slider {
   position: relative;
-  width: 34px;
+  width: 36px;
   height: 18px;
-  background: #2a3a50;
+  background: #223;
   border-radius: 9px;
-  transition: background 0.2s;
+  border: 1px solid #334;
+  transition: background 0.15s;
   flex-shrink: 0;
 }
 
@@ -107,20 +108,19 @@ body {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 14px;
-  height: 14px;
-  background: #5878a0;
+  width: 12px;
+  height: 12px;
+  background: #cde;
   border-radius: 50%;
-  transition: left 0.2s, background 0.2s;
+  transition: left 0.15s;
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background: #1a5080;
+  background: #3a6fcc;
 }
 
 .toggle-switch input:checked + .toggle-slider::after {
   left: 18px;
-  background: #7eb8e0;
 }
 
 .toggle-label {
