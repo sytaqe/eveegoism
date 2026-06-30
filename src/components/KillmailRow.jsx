@@ -39,7 +39,14 @@ export function KillmailRow({ killmail, characterId, metaMap, selected, onToggle
       <td className="km-time">{formatTime(killmail_time)}</td>
       <td className="km-zkb">
         {onZkillboard === 'pending' && <span className="spinner" />}
-        {onZkillboard === true && <span className="zkb-registered">✔</span>}
+        {onZkillboard === true && (
+          <a
+            className="zkb-registered"
+            href={`https://zkillboard.com/kill/${killmail.killmail_id}/`}
+            target="_blank"
+            rel="noreferrer"
+          >✔</a>
+        )}
         {onZkillboard === false && (
           <input type="checkbox" checked={selected} onChange={onToggleSelected} />
         )}
@@ -52,13 +59,19 @@ export function KillmailRow({ killmail, characterId, metaMap, selected, onToggle
             <ShipIcon typeId={victimShipId} size={64} metaGroupId={metaMap[victimShipId]} />
           )}
           {victim.character_id && (
-            <img
-              src={getCharacterPortraitUrl(victim.character_id)}
-              alt={`pilot ${victim.character_id}`}
-              width={64}
-              height={64}
-              style={{ borderRadius: 4, border: '1px solid #1e2d4a' }}
-            />
+            <a
+              href={`https://zkillboard.com/character/${victim.character_id}/`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img
+                src={getCharacterPortraitUrl(victim.character_id)}
+                alt={`pilot ${victim.character_id}`}
+                width={64}
+                height={64}
+                style={{ borderRadius: 4, border: '1px solid #1e2d4a', display: 'block' }}
+              />
+            </a>
           )}
           <div className="victim-names">
             {victimShipName && <span className="victim-ship-name">{victimShipName}</span>}

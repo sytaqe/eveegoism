@@ -289,6 +289,11 @@ body {
 .zkb-registered {
   color: #2ecc40;
   font-size: 1rem;
+  text-decoration: none;
+}
+
+.zkb-registered:hover {
+  color: #5ddd6a;
 }
 
 .zkb-error {
