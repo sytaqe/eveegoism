@@ -26,7 +26,7 @@ function rowMatchesTag(km, characterId, tag) {
 
 export function KillmailList({ session, onLogout }) {
   const [corpMode, setCorpMode] = useState(false)
-  const { killmails, metaMap, loading, error, selectedIds, toggleSelected, postSelected, posting, corpInfo } = useKillmails(session.characterId, corpMode)
+  const { killmails, metaMap, loading, error, selectedIds, toggleSelected, postSelected, posting, reload, reloading, corpInfo } = useKillmails(session.characterId, corpMode)
   const [hiddenTags, setHiddenTags] = useState(new Set())
   const [zkbUnregisteredOnly, setZkbUnregisteredOnly] = useState(false)
 
@@ -72,6 +72,8 @@ export function KillmailList({ session, onLogout }) {
           ))}
         </div>
         <div className="user-info">
+          <button onClick={reload} disabled={loading || reloading}>Reload</button>
+          <span className="post-spinner-slot">{reloading && <span className="spinner" />}</span>
           <button className="post-btn" onClick={postSelected} disabled={selectedIds.size === 0 || posting}>
             {selectedIds.size > 0 ? `Post ${selectedIds.size} ${selectedIds.size === 1 ? 'Killmail' : 'Killmails'}` : 'Post Selected Killmails'}
           </button>
@@ -95,44 +97,46 @@ export function KillmailList({ session, onLogout }) {
         </div>
       </header>
 
-      {loading && <p className="status">Loading killmails…</p>}
-      {error && (
-        <p className="status error">
-          Error: {error}
-          {corpMode && error.includes('403') && <><br />You need Director role!</>}
-        </p>
-      )}
+      <div className="km-scroll">
+        {loading && <p className="status">Loading killmails…</p>}
+        {error && (
+          <p className="status error">
+            Error: {error}
+            {corpMode && error.includes('403') && <><br />You need Director role!</>}
+          </p>
+        )}
 
-      {!loading && !error && killmails.length === 0 && (
-        <p className="status">No killmails found.</p>
-      )}
+        {!loading && !error && killmails.length === 0 && (
+          <p className="status">No killmails found.</p>
+        )}
 
-      {killmails.length > 0 && (
-        <table className="km-table">
-          <thead>
-            <tr>
-              <th>Time (UTC)</th>
-              <th>zKB</th>
-              <th>Solar System</th>
-              <th>Victim</th>
-              <th>Tags</th>
-              <th>Attackers</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleKillmails.map(km => (
-              <KillmailRow
-                key={km.killmail_id}
-                killmail={km}
-                characterId={session.characterId}
-                metaMap={metaMap}
-                selected={selectedIds.has(km.killmail_id)}
-                onToggleSelected={() => toggleSelected(km.killmail_id)}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
+        {killmails.length > 0 && (
+          <table className="km-table">
+            <thead>
+              <tr>
+                <th>Time (UTC)</th>
+                <th>zKB</th>
+                <th>Solar System</th>
+                <th>Victim</th>
+                <th>Tags</th>
+                <th>Attackers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleKillmails.map(km => (
+                <KillmailRow
+                  key={km.killmail_id}
+                  killmail={km}
+                  characterId={session.characterId}
+                  metaMap={metaMap}
+                  selected={selectedIds.has(km.killmail_id)}
+                  onToggleSelected={() => toggleSelected(km.killmail_id)}
+                />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

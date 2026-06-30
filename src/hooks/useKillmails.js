@@ -12,6 +12,7 @@ export function useKillmails(characterId, corpMode = false) {
   const [error, setError] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [posting, setPosting] = useState(false)
+  const [reloading, setReloading] = useState(false)
   const [corpInfo, setCorpInfo] = useState(null)
 
   useEffect(() => {
@@ -116,6 +117,89 @@ export function useKillmails(characterId, corpMode = false) {
     return () => { cancelled = true }
   }, [characterId, corpMode])
 
+  async function reload() {
+    setReloading(true)
+    try {
+      let refs
+      if (corpMode) {
+        refs = await getCorporationRecentKillmails(corpInfo.id)
+      } else {
+        refs = await getRecentKillmails(characterId)
+      }
+
+      const existingIds = new Set(killmails.map(k => k.killmail_id))
+      const newRefs = refs.filter(r => !existingIds.has(r.killmail_id))
+      if (newRefs.length === 0) return
+
+      const details = await Promise.all(
+        newRefs.map(({ killmail_id, killmail_hash }) => getKillmail(killmail_id, killmail_hash))
+      )
+
+      const systemIds = [...new Set(details.map(k => k.solar_system_id))]
+      const systemNames = await Promise.all(systemIds.map(id => getSystemName(id)))
+      const systemMap = Object.fromEntries(systemIds.map((id, i) => [id, systemNames[i]]))
+
+      const victimShipNames = await Promise.all(
+        details.map(k => k.victim.ship_type_id ? getTypeName(k.victim.ship_type_id) : Promise.resolve(null))
+      )
+      const victimCharNames = await Promise.all(
+        details.map(k => k.victim.character_id ? getCharacterName(k.victim.character_id) : Promise.resolve(null))
+      )
+
+      const hasRecon = await Promise.all(
+        details.map(k =>
+          Promise.any(
+            k.attackers.filter(a => a.ship_type_id)
+              .map(a => isReconShip(a.ship_type_id).then(v => v ? Promise.resolve(true) : Promise.reject()))
+          ).catch(() => false)
+        )
+      )
+      const hasCloaky = await Promise.all(
+        details.map(k =>
+          Promise.any(
+            k.attackers.filter(a => a.ship_type_id)
+              .map(a => isCloakyShip(a.ship_type_id).then(v => v ? Promise.resolve(true) : Promise.reject()))
+          ).catch(() => false)
+        )
+      )
+
+      const enriched = details.map((k, i) => ({
+        ...k,
+        killmail_id: newRefs[i].killmail_id,
+        killmail_hash: newRefs[i].killmail_hash,
+        systemName: systemMap[k.solar_system_id],
+        victimShipName: victimShipNames[i],
+        victimCharName: victimCharNames[i],
+        hasRecon: hasRecon[i],
+        hasCloaky: hasCloaky[i],
+        onZkillboard: 'pending',
+      }))
+
+      setKillmails(prev =>
+        [...prev, ...enriched].sort((a, b) => new Date(b.killmail_time) - new Date(a.killmail_time))
+      )
+
+      const allTypeIds = [...new Set([
+        ...details.map(k => k.victim.ship_type_id).filter(Boolean),
+        ...details.flatMap(k => k.attackers.map(a => a.ship_type_id).filter(Boolean)),
+      ])]
+      const metaGroups = await Promise.all(allTypeIds.map(id => getMetaGroupId(id)))
+      setMetaMap(prev => ({
+        ...prev,
+        ...Object.fromEntries(allTypeIds.map((id, i) => [id, metaGroups[i]])),
+      }))
+
+      await Promise.all(newRefs.map(async ref => {
+        const result = await isOnZkillboard(ref.killmail_id).catch(() => null)
+        setKillmails(prev => prev.map(k =>
+          k.killmail_id === ref.killmail_id ? { ...k, onZkillboard: result } : k
+        ))
+      }))
+    } finally {
+      setReloading(false)
+    }
+  }
+
   function toggleSelected(killmailId) {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -151,5 +235,5 @@ export function useKillmails(characterId, corpMode = false) {
     }
   }
 
-  return { killmails, metaMap, loading, error, selectedIds, toggleSelected, postSelected, posting, corpInfo }
+  return { killmails, metaMap, loading, error, selectedIds, toggleSelected, postSelected, posting, reload, reloading, corpInfo }
 }
