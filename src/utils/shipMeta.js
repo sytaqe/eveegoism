@@ -6,48 +6,26 @@
 // Force Recon Ships (groupID 833) and Combat Recon Ships (groupID 906)
 const RECON_GROUP_IDS = new Set([833, 906])
 
-let metaCache = null
-let groupCache = null
-let cloakyCache = null
+const metaPromise = fetch(`${import.meta.env.BASE_URL}data/ship_meta.json`)
+  .then(r => r.ok ? r.json() : {}).catch(() => ({}))
 
-async function loadMeta() {
-  if (metaCache) return metaCache
-  try {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/ship_meta.json`)
-    metaCache = res.ok ? await res.json() : {}
-  } catch { metaCache = {} }
-  return metaCache
-}
+const groupPromise = fetch(`${import.meta.env.BASE_URL}data/ship_groups.json`)
+  .then(r => r.ok ? r.json() : {}).catch(() => ({}))
 
-async function loadGroups() {
-  if (groupCache) return groupCache
-  try {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/ship_groups.json`)
-    groupCache = res.ok ? await res.json() : {}
-  } catch { groupCache = {} }
-  return groupCache
-}
-
-async function loadCloaky() {
-  if (cloakyCache) return cloakyCache
-  try {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/cloaky_types.json`)
-    cloakyCache = res.ok ? new Set(await res.json()) : new Set()
-  } catch { cloakyCache = new Set() }
-  return cloakyCache
-}
+const cloakyPromise = fetch(`${import.meta.env.BASE_URL}data/cloaky_types.json`)
+  .then(r => r.ok ? r.json() : []).then(arr => new Set(arr)).catch(() => new Set())
 
 export async function getMetaGroupId(typeId) {
-  const data = await loadMeta()
+  const data = await metaPromise
   return data[typeId] ?? 1
 }
 
 export async function isReconShip(typeId) {
-  const data = await loadGroups()
+  const data = await groupPromise
   return RECON_GROUP_IDS.has(data[typeId])
 }
 
 export async function isCloakyShip(typeId) {
-  const data = await loadCloaky()
+  const data = await cloakyPromise
   return data.has(typeId)
 }

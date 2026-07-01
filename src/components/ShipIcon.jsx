@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
 // This file is released into the public domain under the CC0 1.0 Universal license.
+import { useState } from 'react'
 import { getTypeIconUrl } from '../utils/esi.js'
 
 // metaGroupId from SDE invMetaTypes:
@@ -10,11 +11,11 @@ import { getTypeIconUrl } from '../utils/esi.js'
 //   5 = Officer
 //   6 = Deadspace
 const OVERLAY_COLORS = {
-  2: '#9E6101', // T2 — blue
-  3: '#446E1E', // Storyline — purple
-  4: '#11470D', // Faction — gold
-  5: '#340E73', // Officer — bright yellow
-  6: '#29478B', // Deadspace — teal
+  2: '#9E6101', // T2 — orange
+  3: '#446E1E', // Storyline — light green
+  4: '#11470D', // Faction — dark green
+  5: '#340E73', // Officer — purple
+  6: '#29478B', // Deadspace — blue
 }
 
 function MetaOverlay({ metaGroupId, size }) {
@@ -39,19 +40,48 @@ function MetaOverlay({ metaGroupId, size }) {
   )
 }
 
+function UnknownShipIcon({ size }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 40"
+      style={{ display: 'block', borderRadius: 4, border: '1px solid #1e2d4a' }}
+    >
+      <rect width="40" height="40" fill="#000" />
+      <text
+        x="20"
+        y="28"
+        textAnchor="middle"
+        fontSize="24"
+        fontWeight="bold"
+        fill="#fff"
+        fontFamily="sans-serif"
+      >?</text>
+    </svg>
+  )
+}
+
 export function ShipIcon({ typeId, size, metaGroupId, className = '', ...props }) {
+  const [errored, setErrored] = useState(false)
+
   return (
     <div style={{ position: 'relative', display: 'inline-block', width: size, height: size }}>
-      <img
-        src={getTypeIconUrl(typeId)}
-        alt={`ship ${typeId}`}
-        width={size}
-        height={size}
-        style={{ display: 'block', borderRadius: 4, border: '1px solid #1e2d4a' }}
-        className={className}
-        {...props}
-      />
-      <MetaOverlay metaGroupId={metaGroupId ?? 1} size={size} />
+      {errored ? (
+        <UnknownShipIcon size={size} />
+      ) : (
+        <img
+          src={getTypeIconUrl(typeId)}
+          alt={`ship ${typeId}`}
+          width={size}
+          height={size}
+          style={{ display: 'block', borderRadius: 4, border: '1px solid #1e2d4a' }}
+          className={className}
+          onError={() => setErrored(true)}
+          {...props}
+        />
+      )}
+      {!errored && <MetaOverlay metaGroupId={metaGroupId ?? 1} size={size} />}
     </div>
   )
 }

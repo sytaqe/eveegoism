@@ -6,7 +6,7 @@ export function Login() {
   return (
     <div className="login-page">
       <h1>EVE EGOISM</h1>
-      <p>View your recent killmails.</p>
+      <p>Manage your recent killmails.</p>
       <button className="login-btn" onClick={startLogin}>
         Login with EVE Online
       </button>

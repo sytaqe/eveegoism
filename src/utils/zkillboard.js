@@ -48,5 +48,6 @@ export async function postKillmail(killmailId, killmailHash) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ killmailurl }),
   })
+  saveToCache(killmailId)
   return true
 }
