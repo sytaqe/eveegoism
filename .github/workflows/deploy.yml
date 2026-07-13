@@ -19,23 +19,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
+      - name: Fetch SDE build number
+        id: sde_version
+        run: |
+          BUILD=$(python -c "
+          import urllib.request, json
+          with urllib.request.urlopen('https://developers.eveonline.com/static-data/tranquility/latest.jsonl') as r:
+              for line in r.read().decode().splitlines():
+                  e = json.loads(line)
+                  if e.get('_key') == 'sde':
+                      print(e['buildNumber']); break
+          ")
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+
       - name: Cache SDE data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: public/data/
-          key: sde-${{ hashFiles('public/data/sde_version.json') }}
-          restore-keys: sde-
+          key: sde-${{ steps.sde_version.outputs.build }}
 
       - name: Download SDE
         run: python scripts/download_sde.py
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
@@ -48,7 +60,7 @@ jobs:
         env:
           VITE_EVE_CLIENT_ID: ${{ secrets.VITE_EVE_CLIENT_ID }}
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist/
 
@@ -61,4 +73,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
