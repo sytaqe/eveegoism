@@ -81,7 +81,7 @@ export function ShipIcon({ typeId, size, metaGroupId, className = '', ...props }
           {...props}
         />
       )}
-      {!errored && <MetaOverlay metaGroupId={metaGroupId ?? 1} size={size} />}
+      {/* {!errored && <MetaOverlay metaGroupId={metaGroupId ?? 1} size={size} />} */}
     </div>
   )
 }

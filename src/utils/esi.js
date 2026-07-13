@@ -67,7 +67,7 @@ export async function getSystemName(systemId) {
 }
 
 export function getTypeIconUrl(typeId) {
-  return `https://images.evetech.net/types/${typeId}/render?size=64`
+  return `https://images.evetech.net/types/${typeId}/icon?size=64`
 }
 
 const typeNameCache = new Map()
